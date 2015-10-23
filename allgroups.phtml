@@ -1,0 +1,192 @@
+<script type="text/javascript" src="<?php echo $this->baseurl ?>extra/ckeditor/ckeditor.js"></script>
+<?php if(count($this->groups) >= 20) { ?>
+<script>
+    $(window).scroll(function() {
+    if($(window).scrollTop() == $(document).height() - $(window).height()) {
+           var search = $('#srch_grp').val().trim();
+           var time = $('input.time').last().val();
+           // second parameter is the offset
+           var last = $('#group_list').children().last().attr('id');
+           getMoreGroups(last,10, 'group_list', time, search, '');
+    } 
+});
+</script>
+
+<?php } ?>
+
+<?php include_once __DIR__ . '../../other_files/forgot.phtml'; ?>
+
+
+<!--verify Popup-->
+<div class="popup confirm" id="grp_add">
+	<div class="p-box">
+    	<div class="p-container" style="width:600px;">
+        	<div class="p-txt-confirm" style="margin-right:75px;">
+				Add Group
+			</div>
+        	<div class="p-btn">
+				<div class="ss-srch" style="margin-left:20px;">
+					<input type="text"  placeholder="Group name" class="srch-fld" id="grp_name"/>
+					<span id="grp_name_err"></span>
+				</div>
+				<div class="ss-srch" style="margin-left:20px;margin-top:15px; margin-bottom:15px;">
+					<input type="text" placeholder="Group code" value="" class="srch-fld" id="grp_code" onkeyup="checkuniquecode(this.value,'')" />
+					<span id="grp_avl_err"></span>
+					<input type="hidden" id="code_un" value="1"/>
+				</div>
+				
+				<div class="ss-srch" style="margin-left:20px;margin-top:15px; margin-bottom:15px;">
+					<textarea id="add_about_us"></textarea/>
+					
+					<span id="editor_add_err"></span>
+					<script type="text/javascript">
+						CKEDITOR.replace( 'add_about_us' );
+					 </script>
+					
+				</div>
+				
+            	<ul class="clearfix">
+                    <li><a href="javascript:void(0);" class="btn-no" onClick="popupAddGroupClose('grp_add');">No</a></li>
+                    <li><a href="javascript:void(0);" class="btn-yes" onClick="addGroup();">Yes</a></li>
+					<li><span id="loading"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="p-overlay"></div>
+</div>
+<!--end-->
+
+
+<!--edit Popup-->
+<div class="popup confirm" id="grp_edit">
+	<div class="p-box">
+    	<div class="p-container" style="width:600px;">
+        	<div class="p-txt-confirm" style="margin-right:75px;">
+				Edit Group<span id="abt_edit_loading"></span>
+			</div>
+        	<div class="p-btn">
+				<div class="ss-srch" style="margin-left:20px;">
+					<input type="text"  placeholder="Group name" class="srch-fld" id="ed_grp_name"/>
+					<span id="ed_grp_name_err"></span>
+				</div>
+				<div class="ss-srch" style="margin-left:20px;margin-top:15px; margin-bottom:15px;">
+					<input type="text" placeholder="Group code" value="" class="srch-fld" id="ed_grp_code" onkeyup="checkuniquecode(this.value, $('#ed_grp_id').val().trim())" />
+					<span id="ed_grp_avl_err"></span>
+					<input type="hidden" id="ed_code_un" value="1"/>
+					<input type="hidden" id="ed_grp_id" value=""/>
+				</div>
+				
+				<div class="ss-srch" style="margin-left:20px;margin-top:15px; margin-bottom:15px;">
+					<textarea id="edit_about_us"></textarea/>
+					<script type="text/javascript">
+						CKEDITOR.replace( 'edit_about_us' );
+					 </script>
+					<span id="editor_edit_err"></span>
+				</div>
+				
+            	<ul class="clearfix">
+                    <li><a href="javascript:void(0);" class="btn-no" onClick="popupEditgroupClose('grp_edit');">No</a></li>
+                    <li><a href="javascript:void(0);" class="btn-yes" onClick="editGroup();">Yes</a></li>
+					<li><span id="edit_loading"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="p-overlay"></div>
+</div>
+<!--end-->
+
+
+
+<!--Header start -->
+<?php include_once __DIR__ . '../../other_files/header.phtml';?>
+
+<!--Header end-->
+
+
+<!--Header start-->
+<?php include_once __DIR__ . '../../other_files/menu.phtml';?>
+<!--Header end-->
+
+<!--Page title start-->
+<div id="pgtitle">
+	<div class="pgt-box clearfix">
+    <h2>Manage Groups</h2>
+    </div>
+</div>
+<!--Page title end-->
+
+<!--Page start-->
+<div id="page" class="clearfix">
+
+	<div class="short-strip clearfix">
+		<form name ="search_grp" action="<?php echo BASE_URL . ltrim(Zend_Controller_Front::getInstance()->getRequest()->getRequestUri(), '/');?>" method="post">
+    	<div class="ss-srch">
+            <input type="text" name="search_grade_text" value="<?php if(isset($this->search)) echo $this->search;?>" placeholder="Search" class="srch-fld" id="srch_grp"/>
+            <input type="button" name="search" value="Search" class="srch-btn" onClick="if($('#srch_grp').val().trim()!=''){document.forms['search_grp'].submit();}" />
+        </div>
+			<div class="short-flds" style="float:left; margin-left:20px;">
+				<input type="submit" value="search" class="search" />
+			</div>
+		</form>
+        
+		<div class="short-flds" style="float:left;margin-left:20px;">
+				<input type="button" value="Add" class="search" onClick="popupAddgroupOpen('grp_add')" />
+		</div>
+		 <div class="short-flds" style="float:left; margin-left:20px;">
+                <input type="submit" value="Reset"  id="reset" style="" class="search" />
+            </div>
+            
+		
+			
+    </div>
+
+	<div class="dataTable" id="group_list">
+            
+        <?php $total = count($this->groups);  if($total>0) { ?>
+    	<div class="dt-row dt-head clearfix">
+            <div class="dt-col dt15" ><div class="dt-txt">#</div></div>
+            <div class="dt-col dt20" style="width:25%"><div class="dt-txt">Group Name</div></div>
+            <div class="dt-col dt20" style="width:25%"><div class="dt-txt">Group Code</div></div>
+            <div class="dt-col dt20" ><div class="dt-txt">Group Available</div></div>
+            <div class="dt-col dt15" ><div class="dt-txt">Action</div></div>
+        </div>
+            
+        <?php  foreach($this->groups as $key =>$val) {  ?>
+            
+        <div class="dt-row clearfix" id="<?php echo $val['group_id']?>">
+            <?php if($key ==0) { ?>
+            <input type="hidden" class="time" value="1"/>
+        <?php } ?>
+          <div class="dt-col dt15"><div class="dt-txt"><?php echo $key+1;?></div></div>
+          <div class="dt-col dt20" style="width:25%"><div class="dt-txt"><?php echo $val['group_name']; ?></div></div>
+          <div class="dt-col dt20" style="width:25%"><div class="dt-txt"><?php echo $val['group_code']; ?></div></div>
+		  <div class="dt-col dt20"><div class="dt-txt"><?php if($val['group_status']==1) { echo '<span id="t_st_'.($val['group_id']).'" style="color:green;">Yes</span>'; } else { echo '<span  id="t_st_'.($val['group_id']).'" style="color:red;">No</span>'; }?></div></div>
+		  <div class="dt-col dt15">
+			<div class="dt-txt ">
+				<span id="grp_st_<?php echo $val['group_id']?>">
+					<a href="javascript:changegroupstatus('<?php echo $val['group_id']?>' ,'<?php echo $val['group_status']?>');" title="Click to change status">
+						<img height="20px;" width="20px;" src="<?php echo $this->baseurl ?>extra/img/left-right.png">
+					</a>
+				</span> 
+				<span style="margin-left:20px;">
+				<a href="javascript:void(0);" onClick="popupEditgroupOpen('grp_edit','<?php echo $val['group_name']?>', '<?php echo $val['group_code']?>', '<?php echo $val['group_id']?>'); show_grp_aboutus('<?php echo $val['group_id']?>');" title="Click to edit">
+					<img height="15px;" width="15px;" src="<?php echo $this->baseurl ?>extra/img/edit.png">
+				</a>
+				</span>
+			</div>
+			</div>
+        </div>
+            <?php } } else {?>
+        <div class="dt-row clearfix">
+            <div class="dt-row dt-head clearfix">
+               <div class="dt-col dt15" style="width:100%"><div class="dt-txt center">No groups</div></div>
+            </div>
+        </div>
+            <?php }?>
+
+        
+    </div>
+</div>
+<!--Page end-->
